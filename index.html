@@ -1,0 +1,1028 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#030713" />
+    <title>WebPocket · CV Start</title>
+    <style>
+      :root {
+        font-family:
+          Inter,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        color: #f8fafc;
+        background: #030611;
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(
+          circle at 50% 0,
+          #17396a 0,
+          #061124 33%,
+          #02040b 85%
+        );
+      }
+      button,
+      a {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      .stage {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+      }
+      .pocket {
+        --main: #38bdf8;
+        --second: #a78bfa;
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        width: min(100%, 430px);
+        height: min(92vh, 840px);
+        min-height: 650px;
+        border: 1px solid color-mix(in srgb, var(--main) 60%, #e2e8f0);
+        border-radius: 31px;
+        background: #030713;
+        box-shadow:
+          0 24px 90px color-mix(in srgb, var(--main) 26%, transparent),
+          inset 0 0 0 1px #ffffff18;
+      }
+      .background {
+        position: absolute;
+        inset: 0;
+        z-index: -3;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        /* Video nítido y vivo */
+        filter: brightness(1.05) saturate(1.15) contrast(1.05);
+        background: #050914;
+      }
+      .shade {
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+        pointer-events: none;
+        background: linear-gradient(
+          180deg,
+          #03071188 0%,
+          #07101e18 22%,
+          #06102410 48%,
+          #02030bcc 100%
+        );
+      }
+      .app {
+        position: relative;
+        z-index: 1;
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 17px 14px 15px;
+        gap: 12px;
+      }
+      .head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .brand h1 {
+        margin: 0;
+        font-size: 17px;
+        letter-spacing: -0.7px;
+      }
+      .brand small,
+      .eyebrow {
+        display: block;
+        margin-top: 4px;
+        font-size: 8px;
+        font-weight: 900;
+        letter-spacing: 1.2px;
+        color: #dbeafe;
+      }
+      .status {
+        display: inline-block;
+        margin-top: 9px;
+        border: 1px solid #4ade8080;
+        border-radius: 999px;
+        padding: 4px 7px;
+        background: #052e16a8;
+        color: #bbf7d0;
+        font-size: 8px;
+        font-weight: 900;
+      }
+      .status.warn {
+        border-color: #fde0477d;
+        background: #3f2c0399;
+        color: #fef08a;
+      }
+      .counter {
+        border: 1px solid #fff4;
+        border-radius: 999px;
+        padding: 8px 10px;
+        background: #06111eb8;
+        font-size: 10px;
+        font-weight: 900;
+      }
+      .menu {
+        display: flex;
+        gap: 6px;
+        padding: 8px;
+        max-width: 100%;
+        overflow: auto;
+        border: 1px solid #fff3;
+        border-radius: 16px;
+        background: #06101bd9;
+        backdrop-filter: blur(16px);
+        scrollbar-width: none;
+      }
+      .menu::-webkit-scrollbar {
+        display: none;
+      }
+      .menu.side {
+        position: absolute;
+        left: 14px;
+        top: 132px;
+        flex-direction: column;
+        width: 104px;
+        z-index: 3;
+      }
+      .menu.side-right {
+        position: absolute;
+        right: 14px;
+        top: 132px;
+        left: auto;
+        flex-direction: column;
+        width: 104px;
+        z-index: 3;
+      }
+      .menu.floating-right {
+        position: absolute;
+        right: 14px;
+        top: 142px;
+        left: auto;
+        max-width: 118px;
+        flex-direction: column;
+        z-index: 3;
+      }
+      .menu.floating-left {
+        position: absolute;
+        left: 14px;
+        top: 142px;
+        max-width: 118px;
+        flex-direction: column;
+        z-index: 3;
+      }
+      .menu.bottom {
+        order: 0;
+        margin-top: 0;
+        align-self: stretch;
+      }
+      .menu button {
+        border: 0;
+        border-radius: 9px;
+        padding: 8px 9px;
+        background: transparent;
+        color: #f8fafc;
+        font-size: 9px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+      .menu button:hover,
+      .menu button.active {
+        background: linear-gradient(135deg, var(--main), var(--second));
+        color: #04111b;
+      }
+      .content {
+        margin-top: auto;
+        padding: 8px 2px;
+        color: #f8fafc;
+        text-shadow: 0 2px 15px #020617;
+      }
+      .content.shifted {
+        margin-left: 111px;
+      }
+      .content.shifted-right {
+        margin-right: 111px;
+      }
+      .content h2 {
+        margin: 7px 0;
+        font-size: clamp(37px, 10vw, 56px);
+        line-height: 0.88;
+        letter-spacing: -2.8px;
+        max-width: 9ch;
+      }
+      .role {
+        margin: 0 0 11px;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .desc {
+        max-width: 32ch;
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.45;
+        font-weight: 600;
+      }
+      .location {
+        margin: 11px 0 0;
+        font-size: 11px;
+        font-weight: 750;
+      }
+      .format-caption {
+        margin: 12px 0 0;
+        font-size: 8px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        opacity: 0.82;
+      }
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .actions.single {
+        grid-template-columns: 1fr;
+      }
+      .action {
+        min-height: 47px;
+        border: 1px solid #fff4;
+        border-radius: 15px;
+        background: #06111eb8;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 900;
+        text-decoration: none;
+        display: grid;
+        place-items: center;
+      }
+      .action.primary {
+        border-color: transparent;
+        color: #06111c;
+        background: linear-gradient(135deg, var(--main), var(--second));
+        box-shadow: 0 10px 26px color-mix(in srgb, var(--main) 40%, transparent);
+      }
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: center;
+      }
+      .dots {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+      }
+      .dot {
+        border: 0;
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #ffffff66;
+        padding: 0;
+      }
+      .dot.active {
+        width: 20px;
+        background: var(--main);
+      }
+      .foot-note {
+        font-size: 8px;
+        letter-spacing: 0.8px;
+        font-weight: 850;
+        opacity: 0.72;
+      }
+      .join {
+        display: flex;
+        justify-content: center;
+        margin-top: 2px;
+      }
+      .join a {
+        min-height: 48px;
+        padding: 12px 28px;
+        border-radius: 999px;
+        text-decoration: none;
+        background: linear-gradient(135deg, #fff45a, #facc15);
+        color: #16130a;
+        font-size: 13px;
+        font-weight: 950;
+        box-shadow:
+          0 0 0 1px #fff8,
+          inset 0 1px #fff9,
+          0 0 26px #facc1580;
+      }
+      .overlay {
+        display: none;
+        position: absolute;
+        z-index: 10;
+        inset: 0;
+        padding: 12px;
+        background: linear-gradient(180deg, #01030af0, #02030df4);
+        backdrop-filter: blur(11px);
+      }
+      .overlay.open {
+        display: flex;
+        align-items: flex-end;
+      }
+      .sheet {
+        max-height: 92%;
+        width: 100%;
+        overflow: auto;
+        border: 1px solid color-mix(in srgb, var(--main) 75%, #d9f99d);
+        border-radius: 23px;
+        padding: 18px;
+        background: linear-gradient(
+          155deg,
+          #060a15fa 0%,
+          #040812fc 58%,
+          #02040bf9 100%
+        );
+        color: #f8fafc;
+        box-shadow: 0 24px 70px #000d;
+      }
+      .sheet-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: flex-start;
+        margin-bottom: 14px;
+      }
+      .sheet h3 {
+        margin: 0;
+        font-size: 21px;
+      }
+      .sheet p {
+        font-size: 12px;
+        line-height: 1.45;
+        color: #dbeafe;
+      }
+      .close {
+        width: 34px;
+        height: 34px;
+        border: 1px solid #fff4;
+        border-radius: 50%;
+        background: #0a1222;
+        color: #fff;
+        font-size: 19px;
+      }
+      .card-list,
+      .gallery {
+        display: grid;
+        gap: 10px;
+      }
+      .card {
+        padding: 12px;
+        border: 1px solid #ffffff24;
+        border-radius: 14px;
+        background: #0a1020e8;
+      }
+      .card b {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 13px;
+      }
+      .card p {
+        margin: 0;
+      }
+      .product {
+        display: grid;
+        grid-template-columns: 62px 1fr;
+        gap: 9px;
+        align-items: center;
+      }
+      .product img {
+        width: 62px;
+        height: 62px;
+        object-fit: cover;
+        border-radius: 12px;
+        background: #0f172a;
+      }
+      /* Variantes de carrito */
+      .cart-carrusel {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        padding-bottom: 6px;
+      }
+      .cart-carrusel .card.product {
+        min-width: 78%;
+        scroll-snap-align: start;
+        flex-shrink: 0;
+      }
+      .cart-grilla {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 9px;
+      }
+      .cart-grilla .card.product {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+      .cart-grilla .card.product img {
+        width: 100%;
+        height: 90px;
+        margin: 0 auto;
+      }
+      .cart-lista .card.product {
+        grid-template-columns: 48px 1fr;
+      }
+      .cart-lista .card.product img {
+        width: 48px;
+        height: 48px;
+      }
+      .cart-vitrina .card.product {
+        grid-template-columns: 1fr;
+      }
+      .cart-vitrina .card.product img {
+        width: 100%;
+        height: 140px;
+      }
+      .gallery iframe {
+        width: 100%;
+        aspect-ratio: 16/9;
+        border: 0;
+        border-radius: 13px;
+        background: #000;
+      }
+      .message {
+        padding: 11px;
+        border: 1px solid #facc1580;
+        border-radius: 13px;
+        background: #312805bf;
+        color: #fef3c7;
+        font-size: 12px;
+      }
+      .loader-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 50;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        background: linear-gradient(160deg, #020611f5, #061124f0 40%, #030713fa);
+        border-radius: 31px;
+        transition: opacity 0.35s ease, visibility 0.35s ease;
+      }
+      .loader-overlay.fade-out {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      .loader-ring {
+        width: 54px;
+        height: 54px;
+        border: 3px solid #ffffff22;
+        border-top-color: var(--main, #38bdf8);
+        border-radius: 50%;
+        animation: spin 0.85s linear infinite;
+      }
+      .loader-text {
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .loader-sub {
+        font-size: 10px;
+        opacity: 0.7;
+        letter-spacing: 1px;
+        font-weight: 700;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .hidden {
+        display: none !important;
+      }
+      @media (max-height: 730px) {
+        .pocket {
+          min-height: 625px;
+          height: 94vh;
+        }
+        .content h2 {
+          font-size: 39px;
+        }
+        .desc {
+          font-size: 12px;
+        }
+        .format-caption {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="stage">
+      <section class="pocket" id="pocket">
+        <div id="loader" class="loader-overlay">
+          <div class="loader-ring"></div>
+          <div class="loader-text">WebPocket</div>
+          <div class="loader-sub">CARGANDO…</div>
+        </div>
+        <div class="app" id="app">Preparando perfil…</div>
+      </section>
+    </main>
+    <script>
+      const EDGE =
+        "https://rrubzwdrsuyjntoejmew.supabase.co/functions/v1/webpocket-api";
+      /* Registro en cv_admin */
+      const REGISTRO_URL =
+        "https://cartasinteractivas-jpg.github.io/cv_admin/?registro=1";
+      const VIDEOS = [
+        "video_cvoficina.mp4",
+        "video_cvlimpieza.mp4",
+        "video_cvdoctor.mp4",
+        "video_cvcontruccion.mp4",
+        "video_negocio1.mp4",
+        "video_negocio2.mp4",
+        "video_negocio3.mp4",
+        "video_negocio4.mp4",
+      ];
+      const IMAGES = [
+        "webpocket-picarones.jpg",
+        "webpocket-pizza.jpg",
+        "webpocket-mecanica.jpg",
+        "webpocket-polos.jpg",
+      ];
+      /* Formatos alineados con formatos_webpocket.sql */
+      const FALLBACK = [
+        { id: "a1000001-0000-4000-8000-000000000001", nombre: "Horizonte Profesional", posicion_navegacion: "superior", estilo_tarjetas: "tarjetas_limpias", color_principal: "#38BDF8", color_secundario: "#818CF8" },
+        { id: "a1000001-0000-4000-8000-000000000002", nombre: "Neon Pocket", posicion_navegacion: "flotante_derecha", estilo_tarjetas: "tarjetas_translucidas", color_principal: "#22D3EE", color_secundario: "#E879F9" },
+        { id: "a1000001-0000-4000-8000-000000000003", nombre: "Tienda Lateral", posicion_navegacion: "lateral_izquierda", estilo_tarjetas: "tarjetas_producto", color_principal: "#F97316", color_secundario: "#FBBF24" },
+        { id: "a1000001-0000-4000-8000-000000000004", nombre: "Tik Pocket", posicion_navegacion: "lateral_derecha", estilo_tarjetas: "pantalla_completa", color_principal: "#F43F5E", color_secundario: "#2DD4BF" },
+        { id: "a1000001-0000-4000-8000-000000000005", nombre: "Carrusel Horizontal", posicion_navegacion: "inferior", estilo_tarjetas: "tarjetas_deslizables", color_principal: "#A855F7", color_secundario: "#F472B6" },
+        { id: "a1000001-0000-4000-8000-000000000006", nombre: "Tarjetas Apiladas", posicion_navegacion: "superior", estilo_tarjetas: "tarjetas_grandes", color_principal: "#10B981", color_secundario: "#34D399" },
+        { id: "a1000001-0000-4000-8000-000000000007", nombre: "Minimal Blanco", posicion_navegacion: "superior", estilo_tarjetas: "sin_tarjeta", color_principal: "#94A3B8", color_secundario: "#CBD5E1" },
+        { id: "a1000001-0000-4000-8000-000000000008", nombre: "Retro Cálido", posicion_navegacion: "inferior_fijo", estilo_tarjetas: "tarjetas_colores", color_principal: "#EAB308", color_secundario: "#EA580C" },
+        { id: "a1000001-0000-4000-8000-000000000009", nombre: "Lima Urbana", posicion_navegacion: "flotante_izquierda", estilo_tarjetas: "tarjetas_bloque", color_principal: "#0EA5E9", color_secundario: "#6366F1" },
+        { id: "a1000001-0000-4000-8000-000000000010", nombre: "Salud Serena", posicion_navegacion: "superior", estilo_tarjetas: "tarjetas_serenas", color_principal: "#14B8A6", color_secundario: "#2DD4BF" },
+        { id: "a1000001-0000-4000-8000-000000000011", nombre: "Glow Magenta", posicion_navegacion: "flotante_derecha", estilo_tarjetas: "tarjetas_mosaico", color_principal: "#DB2777", color_secundario: "#C084FC" },
+        { id: "a1000001-0000-4000-8000-000000000012", nombre: "Pocket Ejecutivo", posicion_navegacion: "superior", estilo_tarjetas: "tarjetas_elegantes", color_principal: "#6366F1", color_secundario: "#A78BFA" },
+        { id: "a1000001-0000-4000-8000-000000000013", nombre: "Carrito Carrusel", posicion_navegacion: "inferior", estilo_tarjetas: "carrito_carrusel", color_principal: "#F59E0B", color_secundario: "#EF4444" },
+        { id: "a1000001-0000-4000-8000-000000000014", nombre: "Carrito Grilla", posicion_navegacion: "superior", estilo_tarjetas: "carrito_grilla", color_principal: "#22C55E", color_secundario: "#86EFAC" },
+        { id: "a1000001-0000-4000-8000-000000000015", nombre: "Carrito Lista", posicion_navegacion: "lateral_izquierda", estilo_tarjetas: "carrito_lista", color_principal: "#0EA5E9", color_secundario: "#38BDF8" },
+        { id: "a1000001-0000-4000-8000-000000000016", nombre: "Carrito Vitrina", posicion_navegacion: "flotante_derecha", estilo_tarjetas: "carrito_vitrina", color_principal: "#A855F7", color_secundario: "#F472B6" },
+        { id: "a1000001-0000-4000-8000-000000000017", nombre: "Carrito Market", posicion_navegacion: "inferior_fijo", estilo_tarjetas: "carrito_market", color_principal: "#E11D48", color_secundario: "#FB7185" },
+        { id: "a1000001-0000-4000-8000-000000000018", nombre: "Carrito Dark Pro", posicion_navegacion: "superior", estilo_tarjetas: "carrito_grilla", color_principal: "#FBBF24", color_secundario: "#F59E0B" },
+        { id: "a1000001-0000-4000-8000-000000000019", nombre: "Comida Casera", posicion_navegacion: "superior", estilo_tarjetas: "tarjetas_comida", color_principal: "#DC2626", color_secundario: "#FCA5A5" },
+        { id: "a1000001-0000-4000-8000-000000000020", nombre: "Taller Industrial", posicion_navegacion: "lateral_izquierda", estilo_tarjetas: "tarjetas_tecnicas", color_principal: "#FACC15", color_secundario: "#1D4ED8" },
+      ];
+      const DEMOS = [
+        {
+          numero_perfil: 1,
+          nombre: "Alejandro Salazar",
+          categoria: "Asistente administrativo",
+          perfil:
+            "Orden, comunicación clara y soluciones prácticas para oficinas que avanzan.",
+          direccion: "Pueblo Libre, Lima",
+          tipo_perfil: "CV",
+          video: VIDEOS[0],
+          formatIndex: 0,
+          color_principal: "#38BDF8",
+          color_secundario: "#818CF8",
+          preguntas: [
+            [
+              "¿Cuál es tu especialidad?",
+              "Asistencia administrativa, coordinación y organización de procesos.",
+            ],
+            [
+              "¿Qué herramientas manejas?",
+              "Excel, Google Workspace y atención de clientes.",
+            ],
+          ],
+        },
+        {
+          numero_perfil: 2,
+          nombre: "Marco Huamán",
+          categoria: "Operario de limpieza",
+          perfil:
+            "Responsable, puntual y enfocado en espacios seguros y ordenados.",
+          direccion: "San Juan de Lurigancho, Lima",
+          tipo_perfil: "CV",
+          video: VIDEOS[1],
+          formatIndex: 1,
+          color_principal: "#22D3EE",
+          color_secundario: "#E879F9",
+          preguntas: [
+            [
+              "¿Qué experiencia tienes?",
+              "Limpieza residencial, oficinas y áreas comunes.",
+            ],
+          ],
+        },
+        {
+          numero_perfil: 3,
+          nombre: "Dr. Mateo Valdivia",
+          categoria: "Médico general",
+          perfil:
+            "Orientación clara y atención respetuosa enfocada en la prevención.",
+          direccion: "Santiago de Surco, Lima",
+          tipo_perfil: "CV",
+          video: VIDEOS[2],
+          formatIndex: 9,
+          color_principal: "#14B8A6",
+          color_secundario: "#2DD4BF",
+          preguntas: [
+            [
+              "¿Qué servicio brinda?",
+              "Orientación general y prevención. Ante síntomas graves, acude a atención presencial.",
+            ],
+          ],
+        },
+        {
+          numero_perfil: 4,
+          nombre: "Carlos Quispe",
+          categoria: "Maestro de obra",
+          perfil:
+            "Construcción, acabados y remodelaciones con coordinación directa.",
+          direccion: "Villa El Salvador, Lima",
+          tipo_perfil: "CV",
+          video: VIDEOS[3],
+          formatIndex: 8,
+          color_principal: "#0EA5E9",
+          color_secundario: "#6366F1",
+          preguntas: [
+            [
+              "¿Qué trabajos realizas?",
+              "Construcción, acabados, enchapes, pintura y remodelaciones.",
+            ],
+          ],
+        },
+        {
+          numero_perfil: 5,
+          negocio: "Dulce Antojo Limeño",
+          categoria: "Picarones peruanos",
+          perfil:
+            "Picarones artesanales recién hechos para reuniones y antojos.",
+          direccion: "Breña, Lima",
+          tipo_perfil: "NEGOCIO",
+          video: VIDEOS[4],
+          formatIndex: 12,
+          color_principal: "#F59E0B",
+          color_secundario: "#EF4444",
+          products: [
+            "Picarones clásicos",
+            "Picarones con miel extra",
+            "Combo familiar",
+            "Caja para evento",
+            "Miel casera",
+          ],
+        },
+        {
+          numero_perfil: 6,
+          negocio: "Forno Notte",
+          categoria: "Pizzería artesanal",
+          perfil: "Pizzas de masa artesanal preparadas al momento.",
+          direccion: "Jesús María, Lima",
+          tipo_perfil: "NEGOCIO",
+          video: VIDEOS[5],
+          formatIndex: 16,
+          color_principal: "#E11D48",
+          color_secundario: "#FB7185",
+          products: [
+            "Pizza margarita",
+            "Pizza pepperoni",
+            "Pizza vegetariana",
+            "Combo familiar",
+            "Gaseosa personal",
+          ],
+        },
+        {
+          numero_perfil: 7,
+          negocio: "Torque Andino",
+          categoria: "Taller automotriz",
+          perfil: "Mantenimiento automotriz explicado sin complicaciones.",
+          direccion: "Ate, Lima",
+          tipo_perfil: "NEGOCIO",
+          video: VIDEOS[6],
+          formatIndex: 19,
+          color_principal: "#FACC15",
+          color_secundario: "#1D4ED8",
+          products: [
+            "Cambio de aceite",
+            "Revisión de frenos",
+            "Alineamiento",
+            "Diagnóstico general",
+            "Cambio de batería",
+          ],
+          gallery: ["https://www.youtube.com/watch?v=5J7qA7vSxjs"],
+        },
+        {
+          numero_perfil: 8,
+          negocio: "Tinta Urbana",
+          categoria: "Polos personalizados",
+          perfil:
+            "Diseños personalizados para equipos, emprendimientos y celebraciones.",
+          direccion: "Los Olivos, Lima",
+          tipo_perfil: "NEGOCIO",
+          video: VIDEOS[7],
+          formatIndex: 13,
+          color_principal: "#22C55E",
+          color_secundario: "#86EFAC",
+          products: [
+            "Polo personalizado básico",
+            "Polo full color",
+            "Polo para equipo",
+            "Polo infantil",
+            "Diseño adicional",
+          ],
+          gallery: ["https://www.youtube.com/watch?v=QChut41O2rY"],
+        },
+      ];
+      const qs = new URLSearchParams(location.search),
+        qrCode = qs.get("perfil");
+      const state = {
+        formats: [],
+        profiles: [],
+        products: [],
+        questions: [],
+        links: [],
+        index: 0,
+        panel: null,
+        qr: Boolean(qrCode),
+        service: false,
+      };
+      const app = document.querySelector("#app"),
+        pocket = document.querySelector("#pocket"),
+        loaderEl = document.querySelector("#loader");
+      const esc = (v) =>
+        String(v ?? "").replace(
+          /[&<>'"]/g,
+          (ch) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              "'": "&#39;",
+              '"': "&quot;",
+            })[ch],
+        );
+      const showLoader = (t = "CARGANDO…") => {
+        if (!loaderEl) return;
+        const sub = loaderEl.querySelector(".loader-sub");
+        if (sub) sub.textContent = t;
+        loaderEl.classList.remove("fade-out");
+      };
+      const hideLoader = () => loaderEl?.classList.add("fade-out");
+      const edge = async (body) => {
+        const r = await fetch(EDGE, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          }),
+          d = await r
+            .json()
+            .catch(() => ({ error: "La función respondió sin JSON." }));
+        if (!r.ok || d.error)
+          throw Error(d.error || "No se pudo cargar el perfil.");
+        return d;
+      };
+      const title = (p) => p.negocio || p.nombre || "WebPocket";
+      const code = (p) => p.codigo_cliente || `demo-${p.numero_perfil}`;
+      const format = (p) =>
+        state.formats.find((f) => String(f.id) === String(p.formato_id)) ||
+        state.formats[(p.formatIndex || 0) % state.formats.length] ||
+        FALLBACK[0];
+      const menuClass = (p) => {
+        const x =
+          `${format(p).posicion_navegacion || ""} ${format(p).tipo_menu || ""} ${format(p).estilo_navegacion || ""}`.toLowerCase();
+        if (x.includes("derecha") && x.includes("lateral")) return "side-right";
+        if (x.includes("izquierda") && x.includes("lateral")) return "side";
+        if (x.includes("flotante") && x.includes("derecha"))
+          return "floating-right";
+        if (x.includes("flotante") && x.includes("izquierda"))
+          return "floating-left";
+        if (x.includes("inferior")) return "bottom";
+        return "";
+      };
+      const publicVideo = (p) =>
+        p.urlvideo_aprobado ||
+        p.urlvideo ||
+        p.video ||
+        VIDEOS[((p.numero_perfil || 1) - 1) % VIDEOS.length];
+      const questions = (p) =>
+        p.preguntas ||
+        state.questions.filter((x) => x.codigo_cliente === code(p));
+      const products = (p) =>
+        p.products ||
+        state.products.filter((x) => x.codigo_cliente === code(p));
+      const links = (p) =>
+        p.gallery ||
+        state.links
+          .filter(
+            (x) =>
+              x.codigo_cliente === code(p) &&
+              /youtube/i.test(`${x.tipo_enlace} ${x.url} ${x.valor_enlace}`),
+          )
+          .map((x) => x.url || x.valor_enlace);
+      const embed = (u) => {
+        try {
+          const x = new URL(u),
+            id =
+              x.searchParams.get("v") ||
+              x.pathname.split("/").filter(Boolean).pop();
+          return id
+            ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}`
+            : "";
+        } catch {
+          return "";
+        }
+      };
+      const cartClass = (p) => {
+        const s = (format(p).estilo_tarjetas || "").toLowerCase();
+        if (s.includes("carrusel")) return "cart-carrusel";
+        if (s.includes("grilla")) return "cart-grilla";
+        if (s.includes("lista")) return "cart-lista";
+        if (s.includes("vitrina")) return "cart-vitrina";
+        if (s.includes("market")) return "cart-market card-list";
+        return "card-list";
+      };
+      function panel(p) {
+        if (!state.panel) return "";
+        const close = '<button type="button" class="close" data-close>×</button>';
+        if (state.panel === "questions")
+          return `<aside class="overlay open"><section class="sheet"><div class="sheet-head"><div><span class="eyebrow">PREGUNTAS</span><h3>Pregúntame</h3></div>${close}</div><div class="card-list">${
+            questions(p)
+              .map(
+                (q) =>
+                  `<article class="card"><b>${esc(q.pregunta || q[0])}</b><p>${esc(q.respuesta || q[1] || "Respuesta disponible pronto.")}</p></article>`,
+              )
+              .join("") || "<p>No hay preguntas públicas todavía.</p>"
+          }</div></section></aside>`;
+        if (state.panel === "products") {
+          const items = products(p).map((x, i) =>
+            typeof x === "string"
+              ? {
+                  descripcion: x,
+                  precio: [12, 18, 28, 35, 9][i] || 15,
+                  foto: IMAGES[Math.max(0, (p.numero_perfil || 5) - 5) % 4],
+                }
+              : x,
+          );
+          return `<aside class="overlay open"><section class="sheet"><div class="sheet-head"><div><span class="eyebrow">PRODUCTOS · ${esc((format(p).estilo_tarjetas || "lista").replace(/_/g, " ").toUpperCase())}</span><h3>${esc(title(p))}</h3></div>${close}</div><div class="${cartClass(p)}">${items.map((x) => `<article class="card product"><img src="${esc(x.foto || IMAGES[0])}" alt="${esc(x.descripcion)}"><div><b>${esc(x.descripcion)}</b><p>S/ ${Number(x.precio || 0).toFixed(2)}${x.stock != null ? ` · Stock ${esc(x.stock)}` : ""}</p></div></article>`).join("")}</div><p class="message">Para pedir, contacta a este negocio por el medio que indiquen.</p></section></aside>`;
+        }
+        if (state.panel === "gallery")
+          return `<aside class="overlay open"><section class="sheet"><div class="sheet-head"><div><span class="eyebrow">GALERÍA</span><h3>Videos</h3></div>${close}</div><div class="gallery">${
+            links(p)
+              .map(embed)
+              .filter(Boolean)
+              .map(
+                (src) =>
+                  `<iframe src="${src}" title="Video del perfil" loading="lazy" allowfullscreen></iframe>`,
+              )
+              .join("") || "<p>No hay videos públicos todavía.</p>"
+          }</div></section></aside>`;
+        return "";
+      }
+      function render() {
+        const p = state.profiles[state.index];
+        if (!p) {
+          app.innerHTML =
+            '<p class="message">No se encontró el perfil solicitado.</p>';
+          return;
+        }
+        const f = format(p),
+          main = p.color_principal || f.color_principal || "#38bdf8",
+          second = p.color_secundario || f.color_secundario || "#a78bfa",
+          menu = menuClass(p),
+          q = questions(p).length,
+          pro = products(p).length,
+          gal = links(p).length,
+          src = publicVideo(p);
+        pocket.style.setProperty("--main", main);
+        pocket.style.setProperty("--second", second);
+        const primaryPanel = pro ? "products" : q ? "questions" : "none";
+        const primaryLabel = pro
+          ? "Ver productos"
+          : q
+            ? "Pregúntame"
+            : "Ver perfil";
+        app.innerHTML = `${
+          src
+            ? `<video class="background" autoplay muted loop playsinline poster="${esc(p.urlfoto || "")}"><source src="${esc(src)}" type="video/mp4"></video>`
+            : `<div class="background" style="background:#050914"></div>`
+        }<div class="shade"></div><header class="head"><div class="brand"><h1>WebPocket</h1><small>${state.qr ? "PERFIL PÚBLICO · QR" : "CV START · EJEMPLOS"}</small><span class="status ${state.service ? "" : "warn"}">${state.service ? "BD SUPABASE" : "MODO MUESTRA"}</span></div><span class="counter">${state.qr ? "QR" : `${String(state.index + 1).padStart(2, "0")}/${String(state.profiles.length).padStart(2, "0")}`}</span></header><nav class="menu ${menu}"><button type="button" class="active" data-close>PERFIL</button>${q ? '<button type="button" data-panel="questions">PREGÚNTAME</button>' : ""}${pro ? '<button type="button" data-panel="products">PRODUCTOS</button>' : ""}${gal ? '<button type="button" data-panel="gallery">VIDEOS</button>' : ""}</nav><section class="content ${menu === "side" ? "shifted" : menu === "side-right" ? "shifted-right" : ""}"><span class="eyebrow">${esc(p.categoria || p.giro || p.tipo_perfil)} · ${state.qr ? "PERFIL ACTIVO" : "PERFIL DE MUESTRA"}</span><h2>${esc(title(p))}</h2><p class="role">${esc(p.tipo_perfil || "WebPocket")}</p><p class="desc">${esc(p.perfil || p.descripcion || "Perfil publicado desde WebPocket.")}</p>${p.direccion ? `<p class="location">⌖ ${esc(p.direccion)}</p>` : ""}<p class="format-caption">FORMATO ${state.service ? "SUPABASE" : "LOCAL"} · ${esc(f.nombre || f.posicion_navegacion || "Dinámico")}</p></section>${
+          state.qr
+            ? `<div class="actions single"><button type="button" class="action primary" data-panel="${primaryPanel}">${primaryLabel}</button></div>`
+            : `<div class="actions"><button type="button" class="action primary" data-panel="${primaryPanel}">${primaryLabel}</button><button type="button" class="action" data-next>Otro perfil</button></div>`
+        }<div class="footer">${
+          state.qr
+            ? ""
+            : `<div class="dots">${state.profiles
+                .map(
+                  (_, i) =>
+                    `<button type="button" class="dot ${i === state.index ? "active" : ""}" data-profile="${i}" aria-label="Perfil ${i + 1}"></button>`,
+                )
+                .join("")}</div>`
+        }<span class="foot-note">WEBPOCKET · LA PÁGINA WEB DE BOLSILLO</span></div>${
+          state.qr
+            ? ""
+            : `<div class="join"><a href="${REGISTRO_URL}">Registrar</a></div>`
+        }${panel(p)}`;
+        bind();
+      }
+      function bind() {
+        app.querySelectorAll("[data-panel]").forEach((x) =>
+          x.addEventListener("click", () => {
+            state.panel = x.dataset.panel === "none" ? null : x.dataset.panel;
+            render();
+          }),
+        );
+        app.querySelectorAll("[data-close]").forEach((x) =>
+          x.addEventListener("click", () => {
+            state.panel = null;
+            render();
+          }),
+        );
+        app.querySelector("[data-next]")?.addEventListener("click", () => {
+          if (!state.profiles.length) return;
+          state.index = (state.index + 1) % state.profiles.length;
+          state.panel = null;
+          render();
+        });
+        app.querySelectorAll("[data-profile]").forEach((x) =>
+          x.addEventListener("click", () => {
+            state.index = Number(x.dataset.profile);
+            state.panel = null;
+            render();
+          }),
+        );
+      }
+      /* Delegación por si el botón se regenera */
+      pocket.addEventListener("click", (ev) => {
+        const next = ev.target.closest("[data-next]");
+        if (next) {
+          ev.preventDefault();
+          if (!state.profiles.length) return;
+          state.index = (state.index + 1) % state.profiles.length;
+          state.panel = null;
+          render();
+        }
+      });
+      async function init() {
+        showLoader("CARGANDO PERFIL…");
+        try {
+          const d = await edge({ action: "public_content" });
+          state.formats = d.formatos?.length ? d.formatos : FALLBACK;
+          state.service = Boolean(d.ok);
+          state.products = d.productos || [];
+          state.questions = d.preguntas || [];
+          state.links = d.enlaces || [];
+          if (qrCode) {
+            const profile = (d.clientes || []).find(
+              (item) =>
+                String(item.codigo_cliente) === String(qrCode) &&
+                (item.activo === true || item.activo === "true" || item.activo === 1),
+            );
+            /* Si no está activo, igual mostrar si existe (opcional: exigir activo) */
+            const any = (d.clientes || []).find(
+              (item) => String(item.codigo_cliente) === String(qrCode),
+            );
+            if (!profile && !any)
+              throw Error("El perfil QR no está activo o no existe.");
+            if (!profile && any)
+              throw Error(
+                "Este perfil aún no está activo. El administrador debe validar el pago.",
+              );
+            state.profiles = [profile];
+            state.index = 0;
+          } else {
+            /* Sin QR: ejemplos para que vean cómo se ve WebPocket */
+            state.profiles = DEMOS;
+            state.index = 0;
+          }
+          render();
+        } catch (error) {
+          if (qrCode) {
+            app.innerHTML = `<p class="message">${esc(error.message)}</p><div class="join" style="margin-top:16px"><a href="${REGISTRO_URL}">Registrar mi WebPocket</a></div>`;
+          } else {
+            state.formats = FALLBACK;
+            state.profiles = DEMOS;
+            state.service = false;
+            render();
+          }
+        } finally {
+          setTimeout(hideLoader, 350);
+        }
+      }
+      init();
+    </script>
+  </body>
+</html>
