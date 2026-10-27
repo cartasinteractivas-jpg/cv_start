@@ -1966,37 +1966,8 @@
         text-shadow: 0 1px 3px #0006, 0 0 8px #fff8;
       }
     
-      /* Chip pequeño al lado del parlante (arriba izquierda) */
-      .sound-unlock-overlay {
-        position: absolute;
-        top: 16px;
-        left: 58px;
-        z-index: 41;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-        margin: 0;
-        background: transparent;
-        border: 0;
-        cursor: pointer;
-        pointer-events: auto;
-        width: auto;
-        height: auto;
-        inset: auto;
-      }
-      .sound-unlock-overlay span {
-        background: #22c55eee;
-        color: #fff;
-        font-weight: 800;
-        font-size: 11px;
-        line-height: 1.2;
-        padding: 7px 10px;
-        border-radius: 999px;
-        box-shadow: 0 4px 14px #0008;
-        white-space: nowrap;
-        max-width: 150px;
-      }
+      /* Overlay de audio desactivado: solo icono 🔊 */
+      .sound-unlock-overlay { display: none !important; }
       /* Menú un poco más abajo para no chocar con parlante / chip */
       .menu:not(.side):not(.side-right):not(.floating-right):not(.floating-left):not(.bottom) {
         margin-top: 8px;
@@ -2030,6 +2001,114 @@
       .card.product.cart-hidden {
         display: none !important;
       }
+    
+      .inline-chat {
+        position: relative;
+        z-index: 8;
+        width: 100%;
+        max-width: 100%;
+        margin: 8px 0 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .inline-chat-log {
+        max-height: 140px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 6px;
+        padding: 8px 4px;
+        mask-image: linear-gradient(180deg, transparent 0%, #000 28%);
+        -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 28%);
+      }
+      .inline-chat-log .bubble {
+        align-self: flex-start;
+        background: #0b1220cc;
+        border: 1px solid #ffffff22;
+        border-radius: 14px 14px 14px 4px;
+        padding: 8px 12px;
+        font-size: 13px;
+        font-weight: 600;
+        max-width: 92%;
+      }
+      .inline-chat-log .bubble.me {
+        align-self: flex-end;
+        border-radius: 14px 14px 4px 14px;
+        background: linear-gradient(135deg, #2563ebcc, #7c3aedcc);
+      }
+      .inline-chat-row {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        width: 100%;
+      }
+      .inline-chat-row input {
+        flex: 1;
+        min-width: 0;
+        border-radius: 999px;
+        border: 1px solid #ffffff33;
+        background: #0b1220ee;
+        color: #fff;
+        padding: 11px 14px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .inline-chat-mic, .inline-chat-send {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 0;
+        font-size: 18px;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+      .inline-chat-mic { background: #f59e0b; color: #111; }
+      .inline-chat-send { background: #22c55e; color: #fff; font-weight: 900; }
+      .menu-slot-cart, .menu-slot-chat {
+        display: flex;
+        justify-content: center;
+        padding: 10px;
+        margin: 6px 0;
+        border-radius: 14px;
+        background: #06101bd9;
+        border: 1px solid #fff3;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .cart-total-badge {
+        position: absolute;
+        top: -6px;
+        right: -8px;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: #ef4444;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 900;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 12px #ef4444aa;
+        z-index: 2;
+      }
+      .cart-fab-total {
+        position: absolute;
+        left: 52px;
+        bottom: 8px;
+        background: linear-gradient(135deg, #fbbf24, #f97316);
+        color: #111;
+        font-weight: 950;
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        box-shadow: 0 4px 14px #f59e0b88;
+        white-space: nowrap;
+        z-index: 91;
+      }
+
     </style>
   </head>
   <body>
@@ -2758,25 +2837,8 @@
       }
 
       function armUnlockSound() {
-        if (isVideoAudible()) return;
-        if (state._soundArm) return;
-        state._soundArm = true;
-        const unlock = function () {
-          state._soundArm = false;
-          document.removeEventListener("pointerdown", unlock, true);
-          document.removeEventListener("touchstart", unlock, true);
-          document.removeEventListener("click", unlock, true);
-          enableSoundNow();
-          setTimeout(function () {
-            if (!isVideoAudible()) {
-              state._soundArm = false;
-              armUnlockSound();
-            }
-          }, 900);
-        };
-        document.addEventListener("pointerdown", unlock, true);
-        document.addEventListener("touchstart", unlock, true);
-        document.addEventListener("click", unlock, true);
+        // desactivado: el audio SOLO se enciende con el icono 🔊
+        return;
       }
 
       function finishMedia(live) {
@@ -2869,21 +2931,22 @@
           }
         }
 
-        // Siempre escuchar el primer toque (también tras re-render)
-        armUnlockSound();
-        // Hook global permanente: cada gesto intenta sonido hasta lograrlo
-        if (!state._globalSoundHook) {
-          state._globalSoundHook = true;
-          const onGesture = function () {
-            if (state._userUnlockedSound && state.soundOn === true) {
-              const v = app.querySelector("#wp-bg-video") || app.querySelector("video.background");
-              if (v && !v.muted && !v.paused) return;
-            }
-            enableSoundNow();
-          };
-          document.addEventListener("pointerdown", onGesture, true);
-          document.addEventListener("touchstart", onGesture, true);
-          document.addEventListener("keydown", onGesture, true);
+        // Solo el icono 🔊 controla el audio. NO desbloquear por tocar otras secciones.
+        // Si el usuario ya activó sonido con el icono, mantenerlo al navegar.
+        if (state.soundOn === true && state._userUnlockedSound) {
+          enableSoundNow();
+        } else {
+          // forzar mute visual
+          if (bgv) {
+            bgv.muted = true;
+            bgv.setAttribute("muted", "");
+            bgv.play().catch(function () {});
+          }
+          if (aud) {
+            aud.muted = true;
+            try { aud.pause(); } catch (_) {}
+          }
+          markOff();
         }
       }
 
@@ -3302,15 +3365,25 @@
         }
         el.style.display = "flex";
         el.className = "cart-fab " + (n ? "has-items" : "empty");
+        // total acumulado
+        let total = 0;
+        try {
+          Object.entries(state.cart || {}).forEach(function ([id, qty]) {
+            const m = (state.cartMeta || {})[id];
+            if (m && m.precio != null) total += Number(m.precio) * Number(qty || 0);
+          });
+        } catch (_) {}
+        const totalLbl = total > 0
+          ? '<span class="cart-fab-total">S/ ' + total.toFixed(2) + "</span>"
+          : "";
         el.innerHTML =
           (n ? '<span class="cart-fab-n">' + (n > 99 ? "99+" : n) + "</span>" : "") +
-          '<img src="https://cartasinteractivas-jpg.github.io/cv_start/button_car.png" alt="Carrito" width="36" height="36">';
+          '<img src="https://cartasinteractivas-jpg.github.io/cv_start/button_car.png" alt="Carrito" width="36" height="36">' +
+          totalLbl;
         el.onclick = function (e) {
           e.preventDefault();
           e.stopPropagation();
-          if (state.soundOn !== true && typeof enableSoundNow === "function") {
-            try { enableSoundNow(); } catch (_) {}
-          }
+          // NO activar audio al abrir carrito
           state.panel = "products";
           render();
         };
@@ -3745,6 +3818,11 @@
                   ? `<button type="button" class="btn-wa" data-order>📱 Pedir por WhatsApp${nCart ? " (" + nCart + ")" : ""}</button>`
                   : `<p class="message">Sin WhatsApp en el perfil del negocio.</p>`
               }
+              <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+                <button type="button" class="action" data-pay="yape" style="flex:1;background:linear-gradient(135deg,#7c3aed,#a78bfa);font-weight:900">💜 Yape</button>
+                <button type="button" class="action" data-pay="efectivo" style="flex:1;background:linear-gradient(135deg,#16a34a,#4ade80);color:#052e16;font-weight:900">💵 Efectivo</button>
+                <button type="button" class="action" data-cart-cancel style="flex:1;background:#334155;font-weight:800">Cancelar pedido</button>
+              </div>
             </div>
           </section></aside>`;
         }
@@ -4337,6 +4415,17 @@
         if (!labelsMenu || typeof labelsMenu !== "object") labelsMenu = {};
         if (!labelsBtn || typeof labelsBtn !== "object") labelsBtn = {};
         if (!menuShow || typeof menuShow !== "object") menuShow = {};
+        const apertura = styleExtra.apertura || {};
+        const apShowMenu = apertura.showMenu !== false && apertura.showMenu !== "false";
+        const apShowBotones = apertura.showBotones !== false && apertura.showBotones !== "false";
+        const apShowChat = !!(apertura.showChat === true || apertura.showChat === "true" || apertura.showChat === 1);
+        const apChatFirst = apertura.chatFirst !== false && apertura.chatFirst !== "false";
+        const apHideVideo = !!(apertura.hideVideo === true || apertura.hideVideo === "true");
+        const apMenuSlot = String(apertura.menuSlot || "menu");
+        const apVideoMins = Number(apertura.videoMins || 0) || 0;
+        // temporizador video: si videoMins > 0 y ya pasó, ocultar
+        if (apVideoMins > 0 && !state._videoShownAt) state._videoShownAt = Date.now();
+        const videoExpired = apVideoMins > 0 && state._videoShownAt && (Date.now() - state._videoShownAt > apVideoMins * 60 * 1000);
         const labM = (k, d) => {
           const v = String(labelsMenu[k] || "").trim();
           return v || d;
@@ -4468,10 +4557,20 @@
           bind();
           return;
         }
-        app.innerHTML = `${mediaBackground(p)}<div class="shade"></div>
-        <button type="button" class="sound-fab needs-tap" data-toggle-sound title="Sonido" aria-label="Sonido">🔇</button>
-        ${!state._userUnlockedSound ? `<button type="button" class="sound-unlock-overlay" data-unlock-sound><span>🔊 Escuchar</span></button>` : ""}
-        ${!state.panel ? socialIcons(p, (() => { try { return String(p.estilo_marco||"").startsWith("{") ? JSON.parse(p.estilo_marco) : {}; } catch(_){ return {}; } })()) : ""}<header class="head compact"><div class="brand"></div><span class="counter">${state.qr ? "" : `${String(state.index + 1).padStart(2, "0")}/${String(state.profiles.length).padStart(2, "0")}`}</span></header><nav class="menu ${menu}">${(() => {
+        const bgHtml = (apHideVideo || videoExpired) ? `<div class="background" style="background:#050914"></div>` : mediaBackground(p);
+        const inlineChatHtml = apShowChat && !state.panel ? `
+          <div class="inline-chat" id="inline-chat">
+            <div class="inline-chat-log" id="inline-chat-log"></div>
+            <div class="inline-chat-row">
+              <input type="text" id="inline-chat-input" placeholder="Escribe o toca el micrófono…" autocomplete="off">
+              <button type="button" class="inline-chat-mic" data-inline-mic title="Hablar">🎙️</button>
+              <button type="button" class="inline-chat-send" data-inline-send title="Enviar">➤</button>
+            </div>
+          </div>` : "";
+        app.innerHTML = `${bgHtml}<div class="shade"></div>
+        <button type="button" class="sound-fab" data-toggle-sound title="Sonido on/off" aria-label="Sonido">${state.soundOn === true && state._userUnlockedSound ? "🔊" : "🔇"}</button>
+        
+        ${!state.panel ? socialIcons(p, (() => { try { return String(p.estilo_marco||"").startsWith("{") ? JSON.parse(p.estilo_marco) : {}; } catch(_){ return {}; } })()) : ""}<header class="head compact"><div class="brand"></div><span class="counter">${state.qr ? "" : `${String(state.index + 1).padStart(2, "0")}/${String(state.profiles.length).padStart(2, "0")}`}</span></header>${apShowMenu ? `<nav class="menu ${menu}">${(() => {
           const items = [];
           items.push(`<button type="button" class="active" data-close>${esc(labM("perfil", "PERFIL"))}</button>`);
           if (showM("chat", p.chat)) items.push(`<button type="button" data-panel="chat">${esc(labM("chat", "PREGUNTAR"))}</button>`);
@@ -4489,7 +4588,7 @@
           const perfil = items[0];
           const rest = items.slice(1).slice(0, 5);
           return [perfil].concat(rest).join("");
-        })()}</nav><section class="content ${menu === "side" ? "shifted" : menu === "side-right" ? "shifted-right" : ""}">${contentBlock}</section>${(() => {
+        })()}</nav>` : (apMenuSlot === "carrito" ? `<div class="menu-slot-cart" data-panel="products">🛒 Carrito</div>` : apMenuSlot === "chat" ? `<div class="menu-slot-chat" data-panel="chat">💬 Chat</div>` : "")}<section class="content ${menu === "side" ? "shifted" : menu === "side-right" ? "shifted-right" : ""}">${contentBlock}${apShowChat && apChatFirst && !state.panel ? inlineChatHtml : ""}</section>${apShowChat && !apChatFirst && !state.panel ? inlineChatHtml : ""}${apShowBotones ? (() => {
           let keys = (btnSlots && btnSlots.length ? btnSlots.slice() : [primaryKey].filter(Boolean)).filter((k) => k && k !== "none" && primaryMap[k]);
           const lay = btnLayout || "1g2p";
           // Solo defaults si el usuario aún no configuró slots en login
@@ -4590,7 +4689,7 @@
             keys.slice(1, 3).map((k, i) => btn(k, i + 1, false)).join("") +
             "</div></div>"
           );
-        })()}${p.url_audio ? `<audio id="wp-audio" src="${esc(p.url_audio)}" loop preload="auto" autoplay></audio>` : ""}<div class="footer">${
+        })() : ""}${p.url_audio ? `<audio id="wp-audio" src="${esc(p.url_audio)}" loop preload="auto" autoplay></audio>` : ""}<div class="footer">${
           state.qr
             ? ""
             : `<div class="dots">${state.profiles
@@ -5180,6 +5279,122 @@
               encodeURIComponent(body),
             "_blank",
           );
+        });
+
+        app.querySelector("[data-cart-cancel]")?.addEventListener("click", () => {
+          if (!confirm("¿Cancelar el pedido y vaciar el carrito?")) return;
+          state.cart = {};
+          state.cartMeta = {};
+          try { mountCartFab(state.profiles[state.index]); } catch (_) {}
+          render();
+        });
+        app.querySelectorAll("[data-pay]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const modo = btn.getAttribute("data-pay") || "yape";
+            const p = state.profiles[state.index];
+            const tel = phoneOf(p);
+            const entries = Object.entries(state.cart || {}).filter(([, q]) => q > 0);
+            if (!entries.length) return alert("El carrito está vacío");
+            let total = 0;
+            const lines = entries.map(([n, q]) => {
+              const meta = (state.cartMeta || {})[n];
+              const precio = meta && meta.precio != null ? Number(meta.precio) : 0;
+              total += precio * q;
+              return "• " + n + " × " + q + " (S/ " + precio.toFixed(2) + ")";
+            });
+            const payLabel = modo === "yape" ? "YAPE" : "EFECTIVO";
+            const msg =
+              "Pedido WebPocket (" +
+              title(p) +
+              ")\nPago: " +
+              payLabel +
+              "\n\n" +
+              lines.join("\n") +
+              "\n\nTOTAL: S/ " +
+              total.toFixed(2);
+            // msg uses JS escaped newlines
+            const msg2 =
+              "Pedido WebPocket (" +
+              title(p) +
+              ")\nPago: " +
+              payLabel +
+              "\n\n" +
+              lines.join("\n") +
+              "\n\nTOTAL: S/ " +
+              total.toFixed(2);
+            if (tel) {
+              window.open(
+                "https://wa.me/" +
+                  (tel.startsWith("51") ? tel : "51" + tel) +
+                  "?text=" +
+                  encodeURIComponent(
+                    [
+                      "Pedido WebPocket (" + title(p) + ")",
+                      "Pago: " + payLabel,
+                      "",
+                      lines.join("\n"),
+                      "",
+                      "TOTAL: S/ " + total.toFixed(2),
+                    ].join("\n")
+                  ),
+                "_blank",
+              );
+            } else alert("Sin WhatsApp en el perfil");
+          });
+        });
+
+        const pushInline = (role, text) => {
+          const log = app.querySelector("#inline-chat-log");
+          if (!log) return;
+          const div = document.createElement("div");
+          div.className = "bubble" + (role === "user" ? " me" : "");
+          div.textContent = text;
+          log.prepend(div);
+        };
+        const sendInline = () => {
+          const input = app.querySelector("#inline-chat-input");
+          const msg = ((input && input.value) || "").trim();
+          if (!msg) return;
+          pushInline("user", msg);
+          if (input) input.value = "";
+          state._pendingChatMsg = msg;
+          state.panel = "chat";
+          render();
+        };
+        app.querySelector("[data-inline-send]")?.addEventListener("click", sendInline);
+        app.querySelector("#inline-chat-input")?.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            sendInline();
+          }
+        });
+        app.querySelector("[data-inline-mic]")?.addEventListener("click", () => {
+          const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+          if (!SR) {
+            alert("Tu navegador no soporta dictado por voz. Escribe el mensaje.");
+            return;
+          }
+          const rec = new SR();
+          rec.lang = "es-PE";
+          rec.onresult = (ev) => {
+            const t =
+              (ev.results &&
+                ev.results[0] &&
+                ev.results[0][0] &&
+                ev.results[0][0].transcript) ||
+              "";
+            const input = app.querySelector("#inline-chat-input");
+            if (input) input.value = t;
+            sendInline();
+          };
+          rec.onerror = () => alert("No se pudo escuchar. Revisa el micrófono.");
+          rec.start();
+        });
+        app.querySelectorAll(".menu-slot-cart, .menu-slot-chat").forEach((el) => {
+          el.addEventListener("click", () => {
+            state.panel = el.getAttribute("data-panel") || "products";
+            render();
+          });
         });
 
         app.querySelector("#chat-form")?.addEventListener("submit", async (e) => {
