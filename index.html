@@ -9117,12 +9117,151 @@ const getStockOf = (pr, p) => {
               renderProductCards(list.slice(0, 10), p, { withSuggestions: false });
             };
 
-            // Agregar varios de una vez (varios nombres o "uno de cada")
-            if (multiIntent && (namedInMsg.length >= 2 || (wantsAll && candidates.length >= 2))) {
-              const list =
-                namedInMsg.length >= 2 ? namedInMsg : candidates.slice(0, 8);
-              addMany(list);
+            // Pedido compuesto: "una gaseosa y una pizza" → 1 por tramo; si hay 2+ pizzas, preguntar
+            if (buy && !wantsAll && (/\s+y\s+|\s+con\s+|,\s*/i.test(String(msg || "")))) {
+              const segs = String(msg || "")
+                .split(/\s+y\s+|\s+con\s+|,/i)
+                .map((s) => s.trim())
+                .filter((s) => s.length > 1);
+              const pool =
+                (matched && matched.all && matched.all.length
+                  ? matched.all
+                  : typeof products === "function"
+                    ? (products(p) || []).map((x) => {
+                        const meta = parseProductMeta(x);
+                        return {
+                          id: meta.name || x.descripcion || x.nombre || "Producto",
+                          precio: Number(x.precio || 0),
+                          foto: resolveProductFoto(meta.foto || x.foto || ""),
+                          stock: x.stock != null && x.stock !== "" ? Number(x.stock) : null,
+                          moneda: x.moneda || "PEN",
+                          raw: x,
+                        };
+                      })
+                    : []) || [];
+              const matchSeg = (seg) => {
+                const qs = normId(seg);
+                const stop = new Set(
+                  "quiero,quisiera,dame,una,un,unas,unos,me,la,el,los,las,por,favor,pido,agrega,anade,añade".split(
+                    ",",
+                  ),
+                );
+                const words = qs.split(/\s+/).filter((w) => w.length > 2 && !stop.has(w));
+                if (!words.length) return [];
+                return pool.filter((pr) => {
+                  const n = normId(pr.id);
+                  return words.some((w) => n.includes(w));
+                });
+              };
+              if (segs.length >= 2) {
+                const toAddList = [];
+                const ambiguous = [];
+                segs.forEach((seg) => {
+                  const hits = matchSeg(seg);
+                  if (hits.length === 1) toAddList.push(hits[0]);
+                  else if (hits.length > 1) ambiguous.push({ seg: seg, hits: hits });
+                });
+                if (ambiguous.length) {
+                  let reply = "";
+                  if (toAddList.length) {
+                    toAddList.forEach((pr) => {
+                      try {
+                        addToCartSafe(pr, 1, p);
+                      } catch (_) {}
+                    });
+                    try {
+                      mountCartFab(p);
+                      saveCartState(p);
+                    } catch (_) {}
+                    reply =
+                      "Agregué: " +
+                      toAddList.map((x) => x.id).join(", ") +
+                      ".\n";
+                  }
+                  ambiguous.forEach((a) => {
+                    reply +=
+                      "Para «" +
+                      a.seg +
+                      "» tengo varias opciones. ¿Cuál quieres?\n" +
+                      a.hits
+                        .slice(0, 8)
+                        .map(
+                          (pr) =>
+                            "• " +
+                            pr.id +
+                            " — S/ " +
+                            Number(pr.precio || 0).toFixed(2),
+                        )
+                        .join("\n") +
+                      "\n";
+                  });
+                  pushInline("bot", reply.trim());
+                  speakReply("Dime cuál de las opciones quieres.");
+                  try {
+                    state.chatByCode[ck].push({
+                      role: "assistant",
+                      content: reply.trim(),
+                    });
+                  } catch (_) {}
+                  const show = ambiguous.flatMap((a) => a.hits).slice(0, 10);
+                  if (show.length)
+                    renderProductCards(show, p, { withSuggestions: false });
+                  return;
+                }
+                if (toAddList.length) {
+                  addMany(toAddList);
+                  return;
+                }
+              }
+            }
+
+            // Solo "uno de cada" agrega varios del mismo tipo
+            if (multiIntent && wantsAll && candidates.length >= 2) {
+              addMany(candidates.slice(0, 8));
               return;
+            }
+
+            // Varias coincidencias de la misma familia (ej. 2 pizzas) → preguntar
+            if (namedInMsg.length >= 2 && !wantsAll) {
+              const words = qnBuy
+                .split(/\s+/)
+                .filter(
+                  (w) =>
+                    w.length > 3 &&
+                    !/quiero|dame|unas|unos|agrega|anade|añade|pedido/.test(w),
+                );
+              const family = words.find((w) =>
+                namedInMsg.every((pr) => normId(pr.id).includes(w)),
+              );
+              if (family) {
+                const reply =
+                  "Tengo varias opciones de " +
+                  family +
+                  ". ¿Cuál deseas?\n" +
+                  namedInMsg
+                    .slice(0, 8)
+                    .map(
+                      (pr) =>
+                        "• " +
+                        pr.id +
+                        " — S/ " +
+                        Number(pr.precio || 0).toFixed(2),
+                    )
+                    .join("\n");
+                pushInline("bot", reply);
+                speakReply("¿Cuál de estas opciones quieres?");
+                try {
+                  state.chatByCode[ck].push({ role: "assistant", content: reply });
+                } catch (_) {}
+                renderProductCards(namedInMsg.slice(0, 8), p, {
+                  withSuggestions: false,
+                });
+                return;
+              }
+              if (multiIntent) {
+                addMany(namedInMsg);
+                return;
+              }
             }
 
             let toAdd = null;
