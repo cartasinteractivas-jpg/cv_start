@@ -4824,15 +4824,6 @@ const products = (p) => {
       const cartCount = () =>
         Object.values(state.cart || {}).reduce((n, q) => n + Number(q || 0), 0);
 
-      // Limpiar restos viejos de carrito/chat en este navegador
-      try {
-        const _kill = [];
-        for (let i = 0; i < sessionStorage.length; i++) {
-          const k = sessionStorage.key(i);
-          if (k && (k.startsWith("wp_cart_") || k.startsWith("wp_chat_"))) _kill.push(k);
-        }
-        _kill.forEach((k) => sessionStorage.removeItem(k));
-      } catch (_) {}
       function cartStorageKey(p) {
         try {
           const c = String((p && (p.codigo_cliente || p.codigo)) || state.qr || "anon");
@@ -4842,15 +4833,22 @@ const products = (p) => {
         }
       }
       function saveCartState(p) {
-        // No guardar carrito entre recargas (evita pedidos fantasma al decir hola)
+        try {
+          sessionStorage.setItem(
+            cartStorageKey(p),
+            JSON.stringify({ cart: state.cart || {}, cartMeta: state.cartMeta || {} }),
+          );
+        } catch (_) {}
       }
       function loadCartState(p) {
-        state.cart = {};
-        state.cartMeta = {};
         try {
-          const c = String((p && (p.codigo_cliente || p.codigo)) || state.qr || "anon");
-          sessionStorage.removeItem("wp_cart_" + c);
-          sessionStorage.removeItem("wp_chat_" + c);
+          const raw = sessionStorage.getItem(cartStorageKey(p));
+          if (!raw) return;
+          const j = JSON.parse(raw);
+          if (j && typeof j === "object") {
+            state.cart = j.cart || {};
+            state.cartMeta = j.cartMeta || {};
+          }
         } catch (_) {}
       }
 
@@ -5252,9 +5250,7 @@ const products = (p) => {
                   '<div class="name-pay-card">' +
                   "<h3>Identifica tu pedido</h3>" +
                   "<p>Nombre y, si quieres, una nota para el negocio.</p>" +
-                  '<input id="name-pay-input" type="text" maxlength="80" placeholder="Tu nombre" autocomplete="name" value="' +
-                  (function(){ try { return esc(localStorage.getItem("wp_buyer_name")||""); } catch(_){ return ""; } })() +
-                  '" />' +
+                  '<input id="name-pay-input" type="text" maxlength="80" placeholder="Tu nombre" autocomplete="name" />' +
                   '<textarea id="name-pay-notes" maxlength="300" rows="3" placeholder="Nota u observación (opcional)" style="width:100%;box-sizing:border-box;margin:0 0 12px;padding:10px 12px;border-radius:12px;border:1px solid #ffffff22;background:#06101b;color:#fff;font-size:14px;resize:vertical"></textarea>' +
                   '<div class="name-pay-actions">' +
                   '<button type="button" class="name-pay-send" data-name-pay-send>Enviar</button>' +
@@ -7425,9 +7421,6 @@ const products = (p) => {
               const p = state.profiles[state.index] || {};
               const input = document.getElementById("name-pay-input");
               const nombreCliente = String((input && input.value) || "").trim();
-              if (nombreCliente) {
-                try { localStorage.setItem("wp_buyer_name", nombreCliente); } catch (_) {}
-              }
               if (!nombreCliente) {
                 if (typeof appAlert === "function")
                   void appAlert("Escribe tu nombre para identificar el pedido.");
@@ -8688,7 +8681,10 @@ const getStockOf = (pr, p) => {
               if (!state.chatByCode[ckT]) state.chatByCode[ckT] = [];
               state.chatByCode[ckT].push({ role: "user", content: msg });
               state.chatByCode[ckT].push({ role: "assistant", content: ack });
-              /* chat no se guarda */;
+              sessionStorage.setItem(
+                "wp_chat_" + ckT,
+                JSON.stringify(state.chatByCode[ckT].slice(-40)),
+              );
             } catch (_) {}
             return;
           }
@@ -8803,7 +8799,10 @@ const getStockOf = (pr, p) => {
               speakReply(reply);
               try {
                 state.chatByCode[ck].push({ role: "assistant", content: reply });
-              /* chat no se guarda */;
+                sessionStorage.setItem(
+                  "wp_chat_" + ck,
+                  JSON.stringify((state.chatByCode[ck] || []).slice(-40)),
+                );
               } catch (_) {}
               try {
                 mountCartFab(p);
@@ -9339,7 +9338,10 @@ const getStockOf = (pr, p) => {
               speakReply("Listo, agregué " + names + " al carrito.");
               try {
                 state.chatByCode[ck].push({ role: "assistant", content: reply });
-              /* chat no se guarda */;
+                sessionStorage.setItem(
+                  "wp_chat_" + ck,
+                  JSON.stringify((state.chatByCode[ck] || []).slice(-40)),
+                );
               } catch (_) {}
               renderProductCards(list.slice(0, 10), p, { withSuggestions: false });
             };
@@ -9732,7 +9734,7 @@ const getStockOf = (pr, p) => {
           const ckR = String(pR.codigo_cliente || pR.codigo || state.qr || "anon");
           if (!state.chatByCode) state.chatByCode = {};
           if (!state.chatByCode[ckR] || !state.chatByCode[ckR].length) {
-            const raw = null;
+            const raw = sessionStorage.getItem("wp_chat_" + ckR);
             if (raw) state.chatByCode[ckR] = JSON.parse(raw) || [];
           }
           const logEl = app.querySelector("#inline-chat-log");
@@ -9945,7 +9947,7 @@ app.querySelectorAll(".menu-slot-cart, .menu-slot-chat").forEach((el) => {
           if (!state.chatByCode) state.chatByCode = {};
           if (!state.chatByCode[ck]) {
             try {
-              const raw = null;
+              const raw = sessionStorage.getItem("wp_chat_" + ck);
               state.chatByCode[ck] = raw ? JSON.parse(raw) : [];
             } catch (_) {
               state.chatByCode[ck] = [];
@@ -10003,7 +10005,7 @@ app.querySelectorAll(".menu-slot-cart, .menu-slot-chat").forEach((el) => {
               }
             }
             hist.push({ role: "assistant", content: reply, products: suggested });
-              /* chat no se guarda */;
+            try { sessionStorage.setItem("wp_chat_" + ck, JSON.stringify(hist.slice(-40))); } catch (_) {}
             if (box) {
               let html = `<div class="bubble bot">${esc(reply)}</div>`;
               if (suggested.length || prods.length) {
