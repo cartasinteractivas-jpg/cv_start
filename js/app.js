@@ -3798,6 +3798,8 @@ const products = (p) => {
             .replace(/\s+/g, " ")
             .trim();
 
+
+            
         const speakBrowser = (text, voicePref) => {
           try {
             if (!window.speechSynthesis) return;
@@ -3841,15 +3843,13 @@ const products = (p) => {
           } catch (_) {}
         };
 
-        const speakReply = async (text) => {
+                const speakReply = async (text) => {
           try {
             try {
               if (window.speechSynthesis) window.speechSynthesis.cancel();
             } catch (_) {}
             if (state._ttsAudio) {
-              try {
-                state._ttsAudio.pause();
-              } catch (_) {}
+              try { state._ttsAudio.pause(); } catch (_) {}
               state._ttsAudio = null;
             }
             try {
@@ -3858,8 +3858,7 @@ const products = (p) => {
             } catch (_) {}
             const clean = cleanForSpeech(text);
             if (!clean) return;
-            // Avatar se anima al tener el audio real (abajo); si es silencio, gesto corto
-            // Sin voz si el cliente eligió silencio
+
             try {
               let vozCfg = "";
               const em = String((p && p.estilo_marco) || "");
@@ -3874,35 +3873,23 @@ const products = (p) => {
                 return;
               }
             } catch (_) {}
+            
             let voicePref = "nova";
             try {
               const j = JSON.parse(
                 (state.profiles[state.index] || {}).estilo_marco || "{}",
               );
-              voicePref =
-                j.ia_voz ||
-                j.ia_voice ||
-                (state.profiles[state.index] || {}).ia_voz ||
-                "nova";
+              voicePref = j.ia_voz || j.ia_voice || (state.profiles[state.index] || {}).ia_voz || "nova";
             } catch (_) {}
-            // Mapear etiquetas ES → voces OpenAI/OpenRouter
+            
             const voiceMap = {
-              mujer: "nova",
-              mujer_alegre: "shimmer",
-              mujer_profesional: "nova",
-              hombre: "echo",
-              hombre_alegre: "echo",
-              hombre_profesional: "onyx",
-              nova: "nova",
-              shimmer: "shimmer",
-              alloy: "alloy",
-              echo: "echo",
-              onyx: "onyx",
-              fable: "fable",
+              mujer: "nova", mujer_alegre: "shimmer", mujer_profesional: "nova",
+              hombre: "echo", hombre_alegre: "echo", hombre_profesional: "onyx",
+              nova: "nova", shimmer: "shimmer", alloy: "alloy", echo: "echo", onyx: "onyx", fable: "fable",
             };
             const vKey = String(voicePref || "nova").toLowerCase().trim();
             const voiceId = voiceMap[vKey] || voiceMap[vKey.replace(/\s+/g, "_")] || "nova";
-            // Siempre intentar OpenRouter TTS primero (PC y móvil)
+            
             if (typeof send === "function") {
               try {
                 const r = await send({
@@ -3912,37 +3899,54 @@ const products = (p) => {
                   ia_voz: voiceId,
                 });
                 if (r && r.ok && r.audio_base64) {
-                  const src =
-                    "data:" +
-                    (r.mime || "audio/mpeg") +
-                    ";base64," +
-                    r.audio_base64;
+                  const src = "data:" + (r.mime || "audio/mpeg") + ";base64," + r.audio_base64;
+                  
+                  // Guardamos el audio pendiente por si el móvil bloquea
+                  state._pendingAudioSrc = src;
+                  
                   const audio = new Audio(src);
                   audio.setAttribute("playsinline", "true");
+                  audio.setAttribute("webkit-playsinline", "true");
                   state._ttsAudio = audio;
-                  try {
-                    avatarOnReply(text, audio);
-                  } catch (_) {}
-                  try {
-                    await audio.play();
-                    return;
-                  } catch (playErr) {
-                    console.warn("TTS autoplay bloqueado, reintento", playErr);
-                    try {
-                      await new Promise((res) => setTimeout(res, 80));
-                      await audio.play();
-                      return;
-                    } catch (_) {}
-                  }
+                  try { avatarOnReply(text, audio); } catch (_) {}
+                  
+                  audio.play().catch(() => {
+                    console.warn("Audio bloqueado. Sonará en el próximo toque.");
+                  });
+                  return;
                 }
               } catch (e) {
                 console.warn("tts_speak", e);
               }
             }
-            // Fallback navegador solo si OpenRouter falló
             speakBrowser(clean, voiceId || voicePref);
           } catch (_) {}
         };
+
+        // Escucha global para reproducir el audio pendiente en móviles
+        if (!window._wpAudioUnlockerBound) {
+          window._wpAudioUnlockerBound = true;
+          document.addEventListener("touchstart", function () {
+            if (state._pendingAudioSrc && state._ttsAudio) {
+              const audio = state._ttsAudio;
+              state._pendingAudioSrc = null;
+              audio.play().catch(e => console.warn("No se pudo reproducir audio pendiente", e));
+            }
+          }, { passive: true });
+          
+          document.addEventListener("click", function () {
+            if (state._pendingAudioSrc && state._ttsAudio) {
+              const audio = state._ttsAudio;
+              state._pendingAudioSrc = null;
+              audio.play().catch(e => console.warn("No se pudo reproducir audio pendiente", e));
+            }
+          }, { passive: true });
+        }
+
+
+            
+
+            
 const getStockOf = (pr, p) => {
           const all = typeof products === "function" ? products(p) : [];
           const found = all.find((x) => {
