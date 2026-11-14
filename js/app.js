@@ -4502,15 +4502,22 @@ const getStockOf = (pr, p) => {
           }
         } catch (_) {}
 
+
         const wantsCatalog = (msg) => {
           const q = String(msg || "").toLowerCase();
           // Solo catálogo explícito; NO preguntas de ingredientes / de qué está hecha
           if (/de que|de qué|esta hecha|está hecha|ingrediente|contiene|como se hace|cómo se hace/.test(q))
             return false;
-          return /vendes|vende|productos?|cat[aá]logo|qu[eé] tienes|que tienes|qu[eé] hay|que hay|mostrar|muestra|opciones|lista de|ofrecen|ofreces|que venden|qué venden/.test(
+          // Añadimos palabras de bebidas y acciones comunes
+          return /vendes|vende|productos?|cat[aá]logo|qu[eé] tienes|que tienes|qu[eé] hay|que hay|mostrar|muestra|opciones|lista de|ofrecen|ofreces|que venden|qué venden|tomar|beber|bebida|gaseosa|refresco|jugo|agua|cerveza|vino|comer|comida|plato|men[uú]|postre|helado/.test(
             q
           );
         };
+            
+
+
+
+            
         const rememberProductTopic = (msg, list) => {
             try {
               const q = String(msg || "")
