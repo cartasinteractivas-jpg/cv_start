@@ -4503,15 +4503,27 @@ const getStockOf = (pr, p) => {
         } catch (_) {}
 
 
-        const wantsCatalog = (msg) => {
-          const q = String(msg || "").toLowerCase();
-          // Solo catálogo explícito; NO preguntas de ingredientes / de qué está hecha
-          if (/de que|de qué|esta hecha|está hecha|ingrediente|contiene|como se hace|cómo se hace/.test(q))
-            return false;
-          // Añadimos palabras de bebidas y acciones comunes
-          return /vendes|vende|productos?|cat[aá]logo|qu[eé] tienes|que tienes|qu[eé] hay|que hay|mostrar|muestra|opciones|lista de|ofrecen|ofreces|que venden|qué venden|tomar|beber|bebida|gaseosa|refresco|jugo|agua|cerveza|vino|comer|comida|plato|men[uú]|postre|helado/.test(
-            q
-          );
+
+
+                    const wantsCatalog = (msg) => {
+          const q = String(msg || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          
+          // 1. Ignorar preguntas informativas (ingredientes, cómo funciona, etc)
+          if (/de que|esta hecha|ingrediente|contiene|como se hace|para que sirve/.test(q)) return false;
+
+          // 2. Detectar intenciones GENERALES de ver catálogo o productos
+          const isAskingForCatalog = 
+            /vendes|vende|productos?|catalogo|servicios?|opciones|ofrecen|ofreces|que venden|que ofreces|que ofrecen/.test(q) ||
+            /tienes|tienen|hay|tienes disponible|hay disponible|que hay|que tienes|que se puede/.test(q) ||
+            /mostrar|muestra|muestrame|ver|mirar|lista de|menu|articulos|items/.test(q) ||
+            /para tomar|para beber|para comer|para llevar|para regalar|para usar|para comprar/.test(q) ||
+            /bebida|comida|postre|servicio|consulta|producto/.test(q) ||
+            /cuanto cuesta|precio|cuanto vale|tarifa|cuanto sale/.test(q);
+            
+          // Si solo saluda o dice "hola", NO es catálogo
+          if (/^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|que tal)/.test(q) && q.length < 20) return false;
+
+          return isAskingForCatalog;
         };
             
 
