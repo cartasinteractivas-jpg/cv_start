@@ -5840,9 +5840,33 @@ const getStockOf = (pr, p) => {
             }
           }
 
-          if (!matched.empty && (catalog || (buy && matched.list.length > 1) || /detalle|detalles|info|informaci[oó]n|caracter/.test(String(msg||"").toLowerCase()))) {
-            const list = (matched.list.length ? matched.list : matched.all).slice(0, 12);
-            // Respuesta local con datos reales de la tabla productos (siempre disponible)
+
+
+          const qnGeneral = String(msg || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          const isGeneralAsk = /tomar|beber|bebida|comer|comida|servicio|producto|catalogo|menu|lista|que tienes|que venden|que ofreces/.test(qnGeneral);
+
+          if (!matched.empty || isGeneralAsk || (catalog || (buy && matched.list.length > 1)) || /detalle|detalles|info|informaci[oó]n|caracter/.test(qnGeneral)) {
+            // Si no hay match exacto pero es una pregunta general, mostramos TODO el catálogo
+            let list = (matched.list.length ? matched.list : matched.all);
+            
+            if (!list.length || (isGeneralAsk && list.length < 2)) {
+               // Rescate: cargar todos los productos del perfil directamente
+               list = (typeof products === "function" ? products(p) : []).map((x) => {
+                 const meta = parseProductMeta(x);
+                 return {
+                   id: meta.name || x.descripcion || x.nombre || "Producto",
+                   precio: Number(x.precio || 0),
+                   foto: resolveProductFoto(meta.foto || x.foto || ""),
+                   stock: x.stock != null && x.stock !== "" ? Number(x.stock) : null,
+                   moneda: x.moneda || "PEN",
+                   raw: x,
+                 };
+               });
+            }
+            
+            list = list.slice(0, 12);
+            
+            // Respuesta local con datos reales
             const localDetail = list
               .map((pr) => {
                 let line = "• " + pr.id + " — S/ " + Number(pr.precio || 0).toFixed(2);
@@ -5850,6 +5874,12 @@ const getStockOf = (pr, p) => {
                 return line;
               })
               .join("\n");
+
+              
+
+
+
+                
             let reply =
               list.length === 1
                 ? ("Vendemos " + list[0].id + " a S/ " + Number(list[0].precio || 0).toFixed(2) +
