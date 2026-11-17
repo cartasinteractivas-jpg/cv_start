@@ -1402,8 +1402,8 @@ const products = (p) => {
               '<button type="button" class="action" data-close style="width:100%;background:#334155">Cerrar</button>' +
               "</div></section>" +
               (state.showNamePay
-                ? '<div class="name-pay-modal" role="dialog" aria-modal="true">' +
-                  '<div class="name-pay-card">' +
+                ? '<div class="name-pay-modal" role="dialog" aria-modal="true" style="align-items: flex-start; padding-top: 10vh; overflow-y: auto;">' +
+                  '<div class="name-pay-card" style="margin-bottom: 20px;">' +
                   "<h3>Identifica tu pedido</h3>" +
                   "<p>Nombre y, si quieres, una nota para el negocio.</p>" +
                   '<input id="name-pay-input" type="text" maxlength="80" placeholder="Tu nombre" autocomplete="name" value="' +
