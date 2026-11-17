@@ -2770,11 +2770,15 @@
         30% { transform: translateY(-5px); opacity: 1; }
       }
     
-      .name-pay-modal {
+       .name-pay-modal {
         position: absolute; inset: 0; z-index: 200;
         background: #020617ee;
-        display: flex; align-items: center; justify-content: center;
+        display: flex; 
+        align-items: flex-start; /* Alinea arriba */
+        justify-content: center;
         padding: 20px;
+        padding-top: 10vh; /* Empuja hacia abajo un poco para que no quede pegado al borde */
+        overflow-y: auto; /* Permite scroll si el teclado se abre */
       }
       .name-pay-card {
         width: 100%; max-width: 340px;
